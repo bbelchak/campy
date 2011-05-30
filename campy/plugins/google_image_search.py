@@ -25,6 +25,7 @@ import traceback
 import re
 import simplejson
 import httplib2
+import urllib
 
 from plugin import CampyPlugin
 import settings
@@ -38,12 +39,13 @@ class GoogleImage(CampyPlugin):
         if not body.startswith(settings.CAMPFIRE_BOT_NAME):
             return
 
-        m = re.match('%s: gis (?P<search_string>\w+)$' % settings.CAMPFIRE_BOT_NAME, body)
+        m = re.match('%s: gis (?P<search_string>.*)$' % settings.CAMPFIRE_BOT_NAME, body)
         if m:
             try:
                 headers, content = httplib2.Http().request(
                     "https://ajax.googleapis.com/ajax/services/search/images?v=1.0&q=%s" %
-                    m.group('search_string'))
+                    urllib.quote(m.group('search_string')))
+                print headers
                 json = simplejson.loads(content)
                 self.speak_image_url(room, json['responseData']['results'][0]['unescapedUrl'])
             except (KeyError,):
