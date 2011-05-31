@@ -37,6 +37,9 @@ PT_ROOM_TO_PROJECT_MAP = {} # dict that maps CAMPFIRE_ROOMS to their correspondi
 REGISTERED_PLUGINS = ('plugins.pivotal_tracker.PivotalTracker',
                       'plugins.google_image_search.GoogleImage',)
 
+SAY_GOODBYE = False
+LEAVE_ON_EXIT = False
+
 
 # Load settings from the local_settings.py file
 try:

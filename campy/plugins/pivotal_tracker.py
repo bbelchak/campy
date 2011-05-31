@@ -42,7 +42,7 @@ class PivotalTracker(CampyPlugin):
         pt story create "Title" "Description" bug|feature|chore|release -- Create a story
         pt getmine started|finished|delivered|accepted|rejected|unstarted|unscheduled -- Get a list of all stories that belong to you
         pt start #story_id -- Start a particular story.
-        pt start|tell next bug|feature|chore -- Start or tell the next story of a given type.
+        pt start|tell next bug|feature|chore [mine] -- Start or tell the next story of a given type. Optionally supply 'mine' at the end of the message to only work on your own stories.
         """ % speaker['user']['name']
         room.paste(help_text)
 
@@ -70,8 +70,8 @@ class PivotalTracker(CampyPlugin):
             self.speak_new_story(room, new_story, speaker)
             return
 
-        m = re.match("%s: pt getmine (?P<state>started|finished|delivered|accepted|rejected|unstarted|unscheduled)$" % settings.CAMPFIRE_BOT_NAME,
-                     body)
+        m = re.match("%s: pt getmine (?P<state>started|finished|delivered|accepted|rejected|unstarted|unscheduled)$" %
+                     settings.CAMPFIRE_BOT_NAME, body)
         if m:
             stories = tracker.GetStories('owner:"%s" state:%s' % (speaker['user']['name'], m.group('state')))
             if len(stories) > 0:
@@ -97,9 +97,17 @@ class PivotalTracker(CampyPlugin):
                                                     story.GetStoryId()))
             return
 
-        m = re.match("%s: pt (?P<command>start|tell) next (?P<story_type>\w+)" % settings.CAMPFIRE_BOT_NAME, body)
+        m = re.match("%s: pt (?P<command>start|tell) next (?P<story_type>bug|feature|chore) (?P<mine>mine)?" %
+                     settings.CAMPFIRE_BOT_NAME, body)
         if m:
-            next = tracker.GetStories("type:%s state:unstarted" % m.group('story_type'))[0]
+            filter = "type:%s state:unstarted" % m.group('story_type')
+            if m.group('mine') == 'mine':
+                filter += ' owner:"%s"' % speaker['user']['name']
+            try:
+                next = tracker.GetStories(filter)[0]
+            except IndexError:
+                room.speak("%s: There were no stories matching your query." % speaker['user']['name'])
+
             if m.group('command') == 'start':
                 next.SetCurrentState('started')
                 next.SetOwnedBy(speaker['user']['name'])
@@ -107,12 +115,11 @@ class PivotalTracker(CampyPlugin):
                 room.speak("%s: [#%i] started by you! Get to work!" % (speaker['user']['name'],
                                                                        next.GetStoryId()))
             elif m.group('command') == 'tell':
-                room.speak("%s: [#%i] %s (%s)" % (settings.CAMPFIRE_BOT_NAME, next.GetStoryId(),
+                room.speak("%s: [#%i] %s (%s)" % (speaker['user']['name'], next.GetStoryId(),
                                                   next.GetName(), next.GetUrl()))
             return
 
 
-
-    def speak_new_story(self, room, new_story, speaker):
+    def reply(self, room, new_story, speaker):
         room.speak(unicode("%s: Your story has been created successfully." % speaker['user']['name']))
 

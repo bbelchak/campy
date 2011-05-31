@@ -73,8 +73,16 @@ class Campy(object):
         for room in self.rooms:
             room.listen(callback, errback)
 
+    def die(self):
+        for room in self.rooms:
+            if settings.SAY_GOODBYE:
+                room.speak("Goodbye!")
+            if settings.LEAVE_ON_EXIT:
+                room.leave()
+
 
 if __name__ == "__main__":
     campy = Campy()
     campy.listen()
     reactor.run()
+    campy.die()
