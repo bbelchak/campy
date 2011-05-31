@@ -20,14 +20,27 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
+CAMPFIRE_SUBDOMAIN = '' # Subdomain you use for campfire
+CAMPFIRE_BOT_NAME = '' # Campfire name of the bot that matches the API_KEY
+CAMPFIRE_API_KEY = '' # Campfire API key for your bot's user
+CAMPFIRE_ROOMS = ('Bot Testing','Operations',) # Tuple of strings that match your room names
 
-from plugins.google_image_search import GoogleImage
+# Google Image search settings
+GOOGLE_IMAGE_SAFE = "active" # active, moderate, off
 
-CAMPFIRE_SUBDOMAIN = ''
-CAMPFIRE_BOT_NAME = ''
-CAMPFIRE_API_KEY = ''
-CAMPFIRE_ROOMS = ()
+# Pivotal Tracker settings
+PT_USERNAME = '' # Pivotal Tracker username
+PT_PASSWORD = '' # Pivotal Tracker password
+PT_ROOM_TO_PROJECT_MAP = {} # dict that maps CAMPFIRE_ROOMS to their corresponding project ids
 
-REGISTERED_PLUGINS = (GoogleImage(),)
+# Tuple of full package paths to the plugins you'd like to register.
+REGISTERED_PLUGINS = ('plugins.pivotal_tracker.PivotalTracker',
+                      'plugins.google_image_search.GoogleImage',)
 
+
+# Load settings from the local_settings.py file
+try:
+    from local_settings import *
+except ImportError:
+    pass
 

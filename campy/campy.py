@@ -20,9 +20,11 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
+from pinder.exc import HTTPNotFoundException
+import re
 
-from pinder.campfire import Campfire
 import settings
+from pinder.campfire import Campfire
 from twisted.internet import reactor
 
 class Campy(object):
@@ -33,6 +35,13 @@ class Campy(object):
         self.rooms = []
         self.since_message_id = None
 
+        self.plugins = []
+        for plugin in settings.REGISTERED_PLUGINS:
+            path = plugin.split('.')
+            klass = path.pop()
+            plugin_obj = getattr(__import__('.'.join(path), globals(), locals(), [klass], -1), klass)
+            self.plugins.append(plugin_obj())
+
         for room in settings.CAMPFIRE_ROOMS:
             room = self.client.find_room_by_name(room)
             if room:
@@ -42,19 +51,30 @@ class Campy(object):
 
     def listen(self):
         def callback(message):
-            for plugin in settings.REGISTERED_PLUGINS:
-                plugin.handle_message(self.client, self.client.room(message['room_id']),
-                                      message)
+            for plugin in self.plugins:
+                try:
+                    speaker = self.client.user(message['user_id'])
+                    if re.match('%s: help' % settings.CAMPFIRE_BOT_NAME, message['body']):
+                        try:
+                            plugin.send_help(self.client, self.client.room(message['room_id']),
+                                        message, speaker)
+                        except NotImplementedError:
+                            pass
+                    else:
+                        plugin.handle_message(self.client, self.client.room(message['room_id']),
+                                          message, speaker)
+                except HTTPNotFoundException:
+                    pass
 
         def errback(message):
             print message
 
+            
         for room in self.rooms:
             room.listen(callback, errback)
 
 
 if __name__ == "__main__":
-    running = True
     campy = Campy()
     campy.listen()
     reactor.run()
