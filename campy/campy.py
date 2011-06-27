@@ -43,6 +43,7 @@ class Campy(object):
             self.plugins.append(plugin_obj())
 
         for room in settings.CAMPFIRE_ROOMS:
+            print "Joining %s" % room
             room = self.client.find_room_by_name(room)
             if room:
                 self.rooms.append(room)
@@ -54,6 +55,9 @@ class Campy(object):
             for plugin in self.plugins:
                 try:
                     speaker = self.client.user(message['user_id'])
+                    if not message['body']:
+                        return
+
                     if re.match('%s: help' % settings.CAMPFIRE_BOT_NAME, message['body']):
                         try:
                             plugin.send_help(self.client, self.client.room(message['room_id']),

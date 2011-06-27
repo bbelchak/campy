@@ -21,9 +21,9 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 CAMPFIRE_SUBDOMAIN = '' # Subdomain you use for campfire
-CAMPFIRE_BOT_NAME = '' # Campfire name of the bot that matches the API_KEY
+CAMPFIRE_BOT_NAME = 'r' # Campfire name of the bot that matches the API_KEY
 CAMPFIRE_API_KEY = '' # Campfire API key for your bot's user
-CAMPFIRE_ROOMS = ('Bot Testing','Operations',) # Tuple of strings that match your room names
+CAMPFIRE_ROOMS = []  # Tuple of strings that match your room names
 
 # Google Image search settings
 GOOGLE_IMAGE_SAFE = "active" # active, moderate, off
@@ -34,12 +34,20 @@ PT_PASSWORD = '' # Pivotal Tracker password
 PT_ROOM_TO_PROJECT_MAP = {} # dict that maps CAMPFIRE_ROOMS to their corresponding project ids
 
 # Tuple of full package paths to the plugins you'd like to register.
-REGISTERED_PLUGINS = ('plugins.pivotal_tracker.PivotalTracker',
-                      'plugins.google_image_search.GoogleImage',)
+REGISTERED_PLUGINS = []
 
 SAY_GOODBYE = False
 LEAVE_ON_EXIT = False
+RSS_REFRESH_TIME = 10 # seconds between rss feed refreshes
 
+try:
+    import simplejson as json
+except ImportError:
+    import json
+
+
+import os
+import sys
 
 # Load settings from the local_settings.py file
 try:
@@ -47,3 +55,19 @@ try:
 except ImportError:
     pass
 
+def load_from_file(filename):
+    print "Loading settings from %s" % filename
+    if os.path.exists(filename):
+        with open(filename) as f:
+            attrs = json.loads(f.read())
+            for k,v in attrs.iteritems():
+                setattr(sys.modules[__name__], k, v)
+
+# Load settings from a list of json config files:
+import_list = [
+    '/etc/campyrc',
+    '%s/.campyrc' % os.environ['HOME']
+]
+
+for filename in import_list:
+    load_from_file(filename)
