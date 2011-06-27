@@ -1,0 +1,7 @@
+Twisted
+simplejson
+BeautifulSoup
+httplib2
+pyopenssl
+feedparser
+-e git+https://github.com/rhymes/pinder.git@master#egg=pinder
