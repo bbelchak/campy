@@ -40,6 +40,8 @@ SAY_GOODBYE = False
 LEAVE_ON_EXIT = False
 RSS_REFRESH_TIME = 10 # seconds between rss feed refreshes
 
+ZERO_CATER_URL = "http://www.zerocater.com/seatme" #default URL
+
 try:
     import simplejson as json
 except ImportError:
