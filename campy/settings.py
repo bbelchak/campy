@@ -25,6 +25,8 @@ CAMPFIRE_BOT_NAME = 'r' # Campfire name of the bot that matches the API_KEY
 CAMPFIRE_API_KEY = '' # Campfire API key for your bot's user
 CAMPFIRE_ROOMS = []  # Tuple of strings that match your room names
 
+NUM_THREADS = 5
+
 # Google Image search settings
 GOOGLE_IMAGE_SAFE = "active" # active, moderate, off
 

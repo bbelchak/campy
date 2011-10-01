@@ -17,4 +17,7 @@ TODO
 * Package using distutils or something similar.
 * Start as a daemon
 * Develop some other plugins
+** 'seen' plugin
+** 'reminders' plugin
 * Further flesh out the plugins system.
+
