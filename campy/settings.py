@@ -20,6 +20,12 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
+import os
+import sys
+import logging
+
+log = logging.getLogger(__name__)
+
 CAMPFIRE_SUBDOMAIN = '' # Subdomain you use for campfire
 CAMPFIRE_BOT_NAME = 'r' # Campfire name of the bot that matches the API_KEY
 CAMPFIRE_API_KEY = '' # Campfire API key for your bot's user
@@ -44,14 +50,13 @@ RSS_REFRESH_TIME = 10 # seconds between rss feed refreshes
 
 ZERO_CATER_URL = "http://www.zerocater.com/seatme" #default URL
 
+LOGLEVEL = logging.DEBUG
+
 try:
     import simplejson as json
 except ImportError:
     import json
 
-
-import os
-import sys
 
 # Load settings from the local_settings.py file
 try:
@@ -59,8 +64,12 @@ try:
 except ImportError:
     pass
 
+# Set up logging
+log_format = "%(levelname)s %(asctime)s %(funcName)s %(lineno)d %(message)s"
+logging.basicConfig(level=logging.DEBUG, format=log_format)
+
 def load_from_file(filename):
-    print "Loading settings from %s" % filename
+    log.debug("Loading settings from %s" % filename)
     if os.path.exists(filename):
         with open(filename) as f:
             attrs = json.loads(f.read())

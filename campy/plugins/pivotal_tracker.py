@@ -97,7 +97,7 @@ class PivotalTracker(CampyPlugin):
                                                     story.GetStoryId()))
             return
 
-        m = re.match("%s: pt (?P<command>start|tell) next (?P<story_type>bug|feature|chore) (?P<mine>mine)?" %
+        m = re.match("%s: pt (?P<command>start|tell) next (?P<story_type>bug|feature|chore)(\s+)?(?P<mine>mine)?" %
                      settings.CAMPFIRE_BOT_NAME, body)
         if m:
             filter = "type:%s state:unstarted" % m.group('story_type')

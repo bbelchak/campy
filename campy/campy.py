@@ -22,23 +22,24 @@
 #
 import threading
 import re
-import sys
-import signal
 import time
-from twisted.internet.defer import Deferred
 import streaming
 import Queue
+import logging
 
 import settings
 from pinder.campfire import Campfire
 from twisted.internet import reactor
 
+log = logging.getLogger(__name__)
+
 class PluginThread(threading.Thread):
-    def __init__(self, plugins, client):
+    def __init__(self, campy):
         threading.Thread.__init__(self)
-        self.plugins = plugins
-        self.client = client
+        self.plugins = campy.plugins
+        self.client = campy.client
         self.kill_received = False
+        self.log = logging.getLogger(__name__)
 
     def run(self):
         while not self.kill_received:
@@ -48,7 +49,7 @@ class PluginThread(threading.Thread):
                 time.sleep(1)
                 continue
 
-            print "%s: Handling %s" % (self.getName(), message)
+            log.debug("%s: Handling %s", self.getName(), message)
             if message:
                 for plugin in self.plugins:
                     try:
@@ -68,18 +69,19 @@ class PluginThread(threading.Thread):
                                               message, speaker)
                     except Exception:
                         pass
-        print "%s shutting down!" % self.getName()
+        log.info("%s shutting down!", self.getName())
 
 
 class CampyStreamConsumer(streaming.MessageReceiver):
-    def __init__(self, plugins, cf_client):
-        self.plugins = plugins
-        self.client = cf_client
+    def __init__(self, campy):
+        self.plugins = campy.plugins
+        self.client = campy.client
         super(CampyStreamConsumer, self).__init__()
         
     def connectionFailed(self, why):
-        print "Couldn't connect:", why
+        log.fatal("Couldn't connect: %s", why)
         reactor.stop()
+        campy.die()
 
     def messageReceived(self, message):
         message_pool.put(message)
@@ -101,7 +103,7 @@ class Campy(object):
             self.plugins.append(plugin_obj())
 
         for room in settings.CAMPFIRE_ROOMS:
-            print "Joining %s" % room
+            log.debug("Joining %s" % room)
             room = self.client.find_room_by_name(room)
             if room:
                 self.rooms.append(room)
@@ -111,8 +113,8 @@ class Campy(object):
     def listen(self):
         for room in self.rooms:
             username, password = room._connector.get_credentials()
-            streaming.start(username, password, room.id,
-                            CampyStreamConsumer(self.plugins, self.client))
+            streaming.start(username, password, room,
+                            CampyStreamConsumer(self))
         reactor.addSystemEventTrigger('before', 'shutdown', self.die)
         reactor.run()
 
@@ -123,6 +125,14 @@ class Campy(object):
                 room.speak("Goodbye!")
             if settings.LEAVE_ON_EXIT:
                 room.leave()
+        kill_threads(get_threads())
+
+def get_threads():
+    return [t.join(1) for t in threads if t is not None and t.isAlive()]
+
+def kill_threads(threads):
+    for t in threads:
+        t.kill_received = True
 
 
 if __name__ == "__main__":
@@ -131,7 +141,7 @@ if __name__ == "__main__":
     threads = []
     campy_started = False
     for x in xrange(settings.NUM_THREADS):
-        thread = PluginThread(campy.plugins, campy.client)
+        thread = PluginThread(campy)
         threads.append(thread)
         thread.daemon = True
         # I had to add this sleep statement here to get the
@@ -141,14 +151,12 @@ if __name__ == "__main__":
 
     while len(threads) > 0:
         try:
-            threads = [t.join(1) for t in threads if t is not None and t.isAlive()]
+            threads = get_threads()
             if not campy_started:
                 campy_started = True
-                print "Campy has started!"
+                log.info("Campy has started!")
                 campy.listen()
-                print "Shutting down..."
+                log.info("Shutting down...")
         except KeyboardInterrupt:
-            print threads
-            for t in threads:
-                t.kill_received = True
+            kill_threads(threads)
 
